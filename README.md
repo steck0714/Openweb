@@ -5,4 +5,4 @@ English support is now available starting from v6.2. 
 To switch, click "設定" from the ≡ menu in the top right, click "japanese" under Langage, and change it to "english." Please restart the browser after changing the setting to apply the new language UI. 
 As this feature is still under development, some parts may remain in japanese. Thank you for your understanding.
 <img width="1920" height="1174" alt="OpenWeb v 6 2 2026_06_16 22_00_56" src="https://github.com/user-attachments/assets/7966f521-2d26-4910-bd90-127cb10866aa" />
-©Openweb project 2026 ©Openweb
+©Openweb ©Openweb project 2026
