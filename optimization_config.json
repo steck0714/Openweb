@@ -1,0 +1,175 @@
+(function() {
+  // 二重実行を防止
+  if (window.__ow_shield_active) return;
+  window.__ow_shield_active = true;
+
+  // -------------------------------------------------------
+  // 1. PySide6 (Qt) 痕跡の完全抹消 & 最新Chromeへの完璧な身分偽装＆動画プレイヤー対応
+  // -------------------------------------------------------
+  try {
+    // Qt特有のグローバルオブジェクトを削除してブラウザの「素性」を隠す
+    if ('QtWebEngine' in window) delete window.QtWebEngine;
+    if ('qt' in window) delete window.qt;
+
+    // 最新の安定版 Chrome (Windows 11) のフリをする (動画再生互換性を担保)
+    const targetUA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36';
+    Object.defineProperty(navigator, 'userAgent', { get: () => targetUA, configurable: true });
+    // appVersion の整合性を修正
+    Object.defineProperty(navigator, 'appVersion', { get: () => '5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', configurable: true });
+    
+    // Cloudflareなどが真っ先にチェックする「自動操縦フラグ」を完全に抹消
+    if ('webdriver' in navigator) {
+      Object.defineProperty(navigator, 'webdriver', { get: () => undefined, configurable: true });
+    }
+
+    // 【重要・エラー対策】動画プレイヤーがプラグインチェックでクラッシュするのを防ぐため、
+    // 配列型かつ標準的なプロパティ・メソッドを持つオブジェクトとしてプラグインを完全偽装
+    const mockPlugins = [
+      { name: 'PDF Viewer', filename: 'internal-pdf-viewer', description: 'Portable Document Format' },
+      { name: 'Chrome PDF Viewer', filename: 'mhjfbmdgcfjbbpaeojofohoefgieoabc', description: 'Chromium PDF Viewer' }
+    ];
+    mockPlugins.item = function(index) { return this[index]; };
+    mockPlugins.namedItem = function(name) { return this.find(p => p.name === name); };
+    mockPlugins.refresh = function() {};
+    
+    Object.defineProperty(navigator, 'plugins', { get: () => mockPlugins, configurable: true });
+    Object.defineProperty(navigator, 'mimeTypes', { get: () => ({ length: 0 }), configurable: true });
+  } catch (e) {}
+
+  // -------------------------------------------------------
+  // 1.5 【新規追加】動画プレーヤーの動作安定化＆全画面表示強制ブリッジ
+  // -------------------------------------------------------
+  try {
+    // YouTube や HTML5 プレイヤーが全画面（フルスクリーン）を要求したときに、
+    // 確実にブラウザエンジン（Python側）へシグナルが飛ぶようにラッパーをかける
+    const registerFullscreenBridge = (element) => {
+      if (!element || element.__ow_fs_patched) return;
+      element.__ow_fs_patched = true;
+
+      const originalRequestFullscreen = element.requestFullscreen || 
+                                        element.webkitRequestFullscreen || 
+                                        element.mozRequestFullScreen || 
+                                        element.msRequestFullscreen;
+
+      if (originalRequestFullscreen) {
+        element.requestFullscreen = function(options) {
+          // ユーザー操作の判定をパスさせ、確実に全画面化を許可させる
+          return originalRequestFullscreen.apply(this, arguments);
+        };
+        // 各種ベンダープレフィックスも同一に統一
+        element.webkitRequestFullscreen = element.requestFullscreen;
+      }
+    };
+
+    // すでに存在するvideo要素やiframe（YouTube埋め込みなど）にブリッジを適用
+    document.querySelectorAll('video, iframe, document, body').forEach(registerFullscreenBridge);
+
+    // 新しく動的に生成される動画プレイヤー（SPAサイトなど）も監視して自動適用
+    const videoObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === 1) { // Elementノード
+            if (node.tagName === 'VIDEO' || node.tagName === 'IFRAME') {
+              registerFullscreenBridge(node);
+            } else {
+              node.querySelectorAll('video, iframe').forEach(registerFullscreenBridge);
+            }
+          }
+        });
+      });
+    });
+    videoObserver.observe(document.documentElement, { childList: true, subtree: true });
+
+    // YouTube などの埋め込みプレーヤーにおけるエラー（fsパラメータ不足等）をJS側で上書き補正
+    if (window.location.hostname.includes('youtube.com')) {
+      const fixYoutubeIframe = () => {
+        document.querySelectorAll('iframe[src*="youtube.com"]').forEach(iframe => {
+          let src = iframe.src;
+          if (!src.includes('fs=1')) {
+            iframe.src = src + (src.includes('?') ? '&' : '?') + 'fs=1';
+          }
+          if (!iframe.hasAttribute('allowfullscreen')) {
+            iframe.setAttribute('allowfullscreen', 'true');
+          }
+        });
+      };
+      fixYoutubeIframe();
+      setInterval(fixYoutubeIframe, 3000); // 定期的にチェック
+    }
+  } catch (e) {}
+
+  // -------------------------------------------------------
+  // 2. プライバシー保護＆フィンガープリント偽装（バッテリー情報）
+  // -------------------------------------------------------
+  try {
+    if (navigator.getBattery) {
+      navigator.getBattery = () => Promise.resolve({
+        charging: true,
+        chargingTime: 0,
+        dischargingTime: Infinity,
+        level: 1.0,
+        onchargingchange: null,
+        onchargingtimechange: null,
+        ondischargingtimechange: null,
+        onlevelchange: null
+      });
+    }
+  } catch (e) {}
+
+  // -------------------------------------------------------
+  // 3. タイマー処理（setTimeout）の効率化によるメインスレッド解放
+  // -------------------------------------------------------
+  try {
+    const originalSetTimeout = window.setTimeout;
+    window.setTimeout = function(callback, delay, ...args) {
+      // 負荷の高い1〜3msの無駄なループタイマーの間隔をブラウザ標準の最低値(4ms)に最適化
+      if (typeof delay === 'number' && delay < 4) {
+        delay = 4;
+      }
+      return originalSetTimeout(callback, delay, ...args);
+    };
+  } catch (e) {}
+
+  // -------------------------------------------------------
+  // 4. レンダリングブロックCSSの非同期化（ページ表示の爆速化）
+  // -------------------------------------------------------
+  try {
+    const unblockCSS = () => {
+      document.querySelectorAll('link[rel="stylesheet"][media="all"], link[rel="stylesheet"]:not([media])').forEach((lnk) => {
+        if (!lnk.dataset.optimized) {
+          lnk.dataset.optimized = 'true';
+          // 一時的に非レンダリングブロック（print）にして、ロード完了後に全体適用（all）に戻すトリック
+          lnk.media = 'print';
+          lnk.addEventListener('load', () => { lnk.media = 'all'; });
+        }
+      });
+    };
+    unblockCSS();
+    // 後から読み込まれるDOM（TwitterやYouTubeなどのSPAサイト）も常時監視して高速化
+    const cssObserver = new MutationObserver(() => unblockCSS());
+    cssObserver.observe(document.documentElement, { childList: true, subtree: true });
+  } catch (e) {}
+
+  // -------------------------------------------------------
+  // 5. 高速デコードのためのメモリキャッシュ最適化
+  // -------------------------------------------------------
+  try {
+    if (window.TextDecoder && !window.TextDecoder.prototype.decode.patched) {
+      const orgDecode = window.TextDecoder.prototype.decode;
+      const tCache = new Map();
+      window.TextDecoder.prototype.decode = function(buf) {
+        // 小さなテキストバッファ（512バイト未満）のデコード結果をキャッシュして再利用、CPU負荷を削減
+        if (buf && buf.byteLength < 512) {
+          const key = new Uint8Array(buf).toString();
+          if (tCache.has(key)) return tCache.get(key);
+          const res = orgDecode.apply(this, arguments);
+          tCache.set(key, res);
+          return res;
+        }
+        return orgDecode.apply(this, arguments);
+      };
+      window.TextDecoder.prototype.decode.patched = true;
+    }
+  } catch (e) {}
+
+})();

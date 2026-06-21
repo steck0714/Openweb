@@ -1,0 +1,33 @@
+# UTF-8
+VSVersionInfo(
+  ffi=FixedFileInfo(
+    filevers=(6, 0, 0, 1),
+    prodvers=(6, 0, 0, 0),    # 【内部用】製品バージョンを 6.0.0.0 に設定
+    mask=0x3f,
+    flags=0x0,
+    OS=0x40004,
+    fileType=0x1,
+    subtype=0x0,
+    date=(0, 0)
+  ),
+  kids=[
+    StringFileInfo(
+      [
+        StringTable(
+          '041104b0',
+          [
+            StringStruct('CompanyName', 'steck0714'),
+            StringStruct('FileDescription', 'OpenWeb Application [://github.com]'),
+            StringStruct('FileVersion', '6.2.0.1'),
+            StringStruct('InternalName', 'OpenWeb'),
+            StringStruct('LegalCopyright', '0'),
+            StringStruct('OriginalFilename', 'openweb.exe'),
+            StringStruct('ProductName', 'OpenWeb'),
+            StringStruct('ProductVersion', '6.0.0.0')    # 【表示用】製品バージョン欄に「6.0.0.0」と表記
+          ]
+        )
+      ]
+    ),
+    VarFileInfo([VarStruct('Translation',)])
+  ]
+)
