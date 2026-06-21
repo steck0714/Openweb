@@ -1,4 +1,5 @@
 openwebは生成AIの無料プランのみでコードコーティングされたpyside6製ブラウザです
+
 Openweb is a PySide6 browser developed solely through the free tiers of generative AI tools.
 <img width="1920" height="1174" alt="OpenWeb v6 0 2026_06_18 22_58_46" src="https://github.com/user-attachments/assets/3822f14d-f2f6-465a-9fd2-5d0df9f7e543" />
 English support is now available starting from v6.2. 
