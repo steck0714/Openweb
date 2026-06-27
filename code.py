@@ -952,16 +952,7 @@ BLIND_BOMBS_HTML = r'''
         window.firebaseObj = null;
 
         // ========== あなたのFirebaseプロジェクト設定 ==========
-        const firebaseConfig = {
-            apiKey: "AIzaSyAyp01r8gDG45Rg0JUXsAQupErsuhhfQH0",
-            authDomain: "blind-bombs-game.firebaseapp.com",
-            databaseURL: "https://blind-bombs-game-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "blind-bombs-game",
-            storageBucket: "blind-bombs-game.firebasestorage.app",
-            messagingSenderId: "695436548485",
-            appId: "1:695436548485:web:26ac51d58b2593aa4a4cec",
-            measurementId: "G-Z28EEXN0TR"
-        };
+        #unknown...
         // ======================================================
 
         // 認証を待ってからFirestore通信をする機構（改良版：ハングしにくくした）
